@@ -1,11 +1,20 @@
+import { useContext, useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import Badge from "@mui/material/Badge";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import { wishlistContext } from "./ContextProvider";
 
 export default function Header() {
+  const { wishlistContextData, setWishlistContextData } =
+    useContext(wishlistContext);
+  console.log(wishlistContextData);
+
   const { currentUser } = useSelector((state) => state.user);
   const [searchTerm, setSearchTerm] = useState("");
+  const [wishlist, setWishlist] = useState([]);
+
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -23,6 +32,23 @@ export default function Header() {
       setSearchTerm(searchTermFromUrl);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+
+    const fetchWhislist = async () => {
+      try {
+        const res = await fetch(
+          `/api/wishlist/displayWishlist?userId=${userId}`
+        );
+        const data = await res.json();
+        setWishlist(data.length);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchWhislist();
+  });
 
   return (
     <header className="bg-slate-200 shadow-md">
@@ -58,6 +84,18 @@ export default function Header() {
             <li className="hidden sm:inline text-slate-700 hover:underline">
               About
             </li>
+          </Link>
+          <Link to="/wishlist">
+            <Badge
+              badgeContent={
+                wishlistContextData?.length !== 0
+                  ? wishlistContextData?.length
+                  : wishlist
+              }
+              color="primary"
+            >
+              <FavoriteIcon color="action" />
+            </Badge>
           </Link>
           <Link to="/profile">
             {currentUser ? (

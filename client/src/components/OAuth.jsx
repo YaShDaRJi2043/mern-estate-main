@@ -27,6 +27,7 @@ export default function OAuth() {
       });
       const data = await res.json();
       localStorage.setItem("access_token", data?.token);
+      localStorage.setItem("userId", data?.rest?._id);
 
       dispatch(signInSuccess(data));
       navigate("/");

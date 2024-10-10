@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import SwiperCore from "swiper";
 import { useSelector } from "react-redux";
@@ -15,18 +15,29 @@ import {
 } from "react-icons/fa";
 import Contact from "../components/Contact";
 
-// https://sabe.io/blog/javascript-format-numbers-commas#:~:text=The%20best%20way%20to%20format,format%20the%20number%20with%20commas.
+import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import Rating from "@mui/material/Rating";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { wishlistContext } from "../components/ContextProvider";
 
 export default function Listing() {
+  const { wishlistContextData, setWishlistContextData } =
+    useContext(wishlistContext);
+
   SwiperCore.use([Navigation]);
   const [listing, setListing] = useState(null);
-  console.log(listing);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [contact, setContact] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  console.log(ratingValue);
+
   const params = useParams();
+  const navigate = useNavigate();
+
   const { currentUser } = useSelector((state) => state.user);
 
   useEffect(() => {
@@ -51,6 +62,88 @@ export default function Listing() {
     fetchListing();
   }, [params.listingId]);
 
+  const fetchWishlist = async () => {
+    const userId = localStorage.getItem("userId");
+    try {
+      const res = await fetch(`/api/wishlist/displayWishlist?userId=${userId}`);
+      const data = await res.json();
+      setWishlistContextData(data);
+      const isWishlisted = data.some((item) => item._id === params.listingId);
+      if (isWishlisted) {
+        setRatingValue(1);
+      } else {
+        setRatingValue(0);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [params.listingId]);
+
+  const handleRatingChange = async (event, newValue) => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      setRatingValue(newValue);
+      if (newValue > 0) {
+        try {
+          const res = await fetch("/api/wishlist/addWishlist", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: localStorage.getItem("userId"),
+              listingId: params.listingId,
+            }),
+          });
+          const data = await res.json();
+          console.log("Favorite API response:", data);
+
+          if (data?.status === 201) {
+            fetchWishlist();
+          }
+        } catch (error) {
+          console.error("Error calling favorite API:", error);
+        }
+      } else {
+        try {
+          const res = await fetch("/api/wishlist/removeWishlist", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: localStorage.getItem("userId"),
+              listingId: params.listingId,
+            }),
+          });
+          const data = await res.json();
+          console.log("Favorite API response:", data);
+
+          if (data?.status === 201) {
+            fetchWishlist();
+          }
+        } catch (error) {
+          console.error("Error calling favorite API:", error);
+        }
+      }
+    } else {
+      navigate("/sign-in");
+    }
+  };
+
+  const StyledRating = styled(Rating)({
+    "& .MuiRating-iconFilled": {
+      color: "#ff6d75",
+    },
+    "& .MuiRating-iconHover": {
+      color: "#ff3d47",
+    },
+  });
+
   return (
     <main>
       {loading && <p className="text-center my-7 text-2xl">Loading...</p>}
@@ -72,17 +165,33 @@ export default function Listing() {
               </SwiperSlide>
             ))}
           </Swiper>
-          <div className="fixed top-[13%] right-[3%] z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer">
-            <FaShare
-              className="text-slate-500"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                setCopied(true);
-                setTimeout(() => {
-                  setCopied(false);
-                }, 2000);
-              }}
-            />
+
+          <div className="fixed flex justify-evenly w-36 top-[13%] right-[3%] z-10">
+            <div className=" border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer pt-2">
+              <Box>
+                <StyledRating
+                  name="customized-color"
+                  max={1}
+                  value={ratingValue}
+                  onChange={handleRatingChange}
+                  icon={<FavoriteIcon fontSize="large" />}
+                  emptyIcon={<FavoriteBorderIcon fontSize="large" />}
+                />
+              </Box>
+            </div>
+
+            <div className="border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer">
+              <FaShare
+                className="text-slate-500"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  setCopied(true);
+                  setTimeout(() => {
+                    setCopied(false);
+                  }, 2000);
+                }}
+              />
+            </div>
           </div>
           {copied && (
             <p className="fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2">
@@ -91,7 +200,7 @@ export default function Listing() {
           )}
           <div className="flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4">
             <p className="text-2xl font-semibold">
-              {listing.name} - ${" "}
+              {listing.name} - ₹{" "}
               {listing.offer
                 ? listing.discountPrice.toLocaleString("en-US")
                 : listing.regularPrice.toLocaleString("en-US")}

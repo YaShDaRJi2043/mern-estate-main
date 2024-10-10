@@ -290,7 +290,7 @@ export default function CreateListing() {
               <span>Furnished</span>
             </div>
 
-            <div className="flex gap-2 mt-3">
+            {/* <div className="flex gap-2 mt-3">
               <input
                 type="checkbox"
                 id="offer"
@@ -299,7 +299,7 @@ export default function CreateListing() {
                 checked={formData.offer}
               />
               <span>Offer</span>
-            </div>
+            </div> */}
           </div>
 
           <div className="flex flex-wrap justify-around">

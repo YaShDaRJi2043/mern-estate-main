@@ -3,6 +3,8 @@ import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 // Register
 export const signup = async (req, res, next) => {
@@ -77,6 +79,102 @@ export const google = async (req, res, next) => {
 export const signOut = async (req, res, next) => {
   try {
     res.status(200).json({ status: 200, message: "User has been logged out!" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Forgot Password Request
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return next(errorHandler(404, "User with this email does not exist!"));
+    }
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = bcryptjs.hashSync(resetToken, 10);
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 3600000;
+
+    await user.save();
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "Password Reset Request",
+      html: `<p>You are receiving this email because you (or someone else) requested to reset the password for your account.</p>
+             <p>Please click on the following link, or paste this into your browser to complete the process:</p>
+             <p><a href="${resetLink}">${resetLink}</a></p>
+             <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      status: 200,
+      message: "Password reset link sent to your email!",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reset Password
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    const user = await User.findOne({
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user || !bcryptjs.compareSync(token, user.resetPasswordToken)) {
+      return next(errorHandler(400, "Invalid or expired token!"));
+    }
+
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      status: 200,
+      message: "Password has been reset successfully!",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Validate Reset Token
+export const validateResetToken = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    const user = await User.findOne({
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user || !bcryptjs.compareSync(token, user.resetPasswordToken)) {
+      return next(errorHandler(400, "Invalid or expired token!"));
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "Reset token is valid.",
+    });
   } catch (error) {
     next(error);
   }

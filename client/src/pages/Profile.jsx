@@ -34,6 +34,8 @@ export default function Profile() {
   const [userListings, setUserListings] = useState([]);
   const dispatch = useDispatch();
 
+  console.log(currentUser.rest.avatar);
+
   // firebase storage
   // allow read;
   // allow write: if
@@ -247,7 +249,7 @@ export default function Profile() {
         />
         <img
           onClick={() => fileRef.current.click()}
-          src={formData.avatar || currentUser?.rest?.avatar}
+          src={formData.avatar || currentUser.rest.avatar}
           alt="profile"
           className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
         />

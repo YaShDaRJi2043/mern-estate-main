@@ -177,7 +177,7 @@ export default function Search() {
               />
               <span>Sale</span>
             </div>
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <input
                 type="checkbox"
                 id="offer"
@@ -186,7 +186,7 @@ export default function Search() {
                 checked={sidebardata.offer}
               />
               <span>Offer</span>
-            </div>
+            </div> */}
           </div>
           <div className="flex gap-2 flex-wrap items-center">
             <label className="font-semibold">Amenities:</label>

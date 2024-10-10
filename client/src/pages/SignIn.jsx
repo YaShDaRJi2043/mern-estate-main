@@ -42,6 +42,7 @@ export default function SignIn() {
       } else {
         dispatch(signInSuccess(data));
         localStorage.setItem("access_token", data?.token);
+        localStorage.setItem("userId", data?.rest?._id);
       }
       navigate("/");
     } catch (error) {
@@ -93,6 +94,12 @@ export default function SignIn() {
         <p>Dont have an account?</p>
         <Link to={"/sign-up"}>
           <span className="text-blue-700">Sign up</span>
+        </Link>
+      </div>
+      <div className="flex gap-2 mt-5">
+        <p>Forgot Password?</p>
+        <Link to={"/forgot-password"}>
+          <span className="text-blue-700">Forgot Password</span>
         </Link>
       </div>
       {error && <p className="text-red-500 mt-5">{error}</p>}
