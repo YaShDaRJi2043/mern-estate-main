@@ -20,6 +20,8 @@ import {
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteUser } from "firebase/auth";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 export default function Profile() {
   const fileRef = useRef(null);
@@ -32,9 +34,11 @@ export default function Profile() {
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
-  const dispatch = useDispatch();
+  const [passwordShow, setPasswordShow] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState(null);
 
-  console.log(currentUser.rest.avatar);
+  const dispatch = useDispatch();
 
   // firebase storage
   // allow read;
@@ -141,8 +145,6 @@ export default function Profile() {
               });
           }
         }
-
-        // delete firebase account
         const user = auth.currentUser;
         deleteUser(user);
         dispatch(deleteUserSuccess(data));
@@ -200,6 +202,21 @@ export default function Profile() {
     }
   };
 
+  const openModal = (listingId) => {
+    setSelectedListingId(listingId);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedListingId(null);
+  };
+
+  const confirmDelete = () => {
+    handleListingDelete(selectedListingId);
+    closeModal();
+  };
+
   const handleListingDelete = async (listingId) => {
     try {
       const res = await fetch(`/api/listing/delete/${listingId}`, {
@@ -239,6 +256,7 @@ export default function Profile() {
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           onChange={(e) => setFile(e.target.files[0])}
@@ -282,13 +300,28 @@ export default function Profile() {
           className="border p-3 rounded-lg"
           onChange={handleChange}
         />
-        <input
-          type="password"
-          placeholder="password"
-          onChange={handleChange}
-          id="password"
-          className="border p-3 rounded-lg"
-        />
+
+        <div className="relative">
+          <input
+            type={passwordShow === false ? "password" : "text"}
+            placeholder="Update password"
+            className="border p-3 rounded-lg w-full pr-10"
+            id="password"
+            onChange={handleChange}
+          />
+
+          <span
+            className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500"
+            onClick={() => setPasswordShow(!passwordShow)}
+          >
+            {passwordShow === false ? (
+              <VisibilityIcon />
+            ) : (
+              <VisibilityOffIcon />
+            )}
+          </span>
+        </div>
+
         <button
           disabled={loading}
           className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80"
@@ -302,6 +335,7 @@ export default function Profile() {
           Create Listing
         </Link>
       </form>
+
       <div className="flex justify-between mt-5">
         <span
           onClick={handleDeleteUser}
@@ -351,7 +385,8 @@ export default function Profile() {
 
               <div className="flex flex-col item-center">
                 <button
-                  onClick={() => handleListingDelete(listing._id)}
+                  // onClick={() => handleListingDelete(listing._id)}
+                  onClick={() => openModal(listing._id)}
                   className="text-red-700 uppercase"
                 >
                   Delete
@@ -362,6 +397,29 @@ export default function Profile() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto">
+            <h2 className="text-xl font-semibold mb-4">Delete Confirmation</h2>
+            <p>Are you sure you want to delete this listing?</p>
+            <div className="mt-6 flex justify-end gap-4">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                onClick={confirmDelete}
+              >
+                Yes, Delete
+              </button>
+              <button
+                className="bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
+                onClick={closeModal}
+              >
+                No, Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -27,6 +27,10 @@ const About = () => {
         should be an exciting and rewarding experience, and we are dedicated to
         making that a reality for each and every one of our clients.
       </p>
+      <p className="mb-4 text-slate-700 italic">
+        Reach out to us for personalized support:{" "}
+        <span className="text-blue-500">info@primeestate.com</span>
+      </p>
     </div>
   );
 };
