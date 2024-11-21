@@ -228,7 +228,7 @@ export default function CreateListing() {
                 onChange={handleChange}
                 checked={formData.type === "sale"}
               />
-              <span>Sell</span>
+              <span>Sale</span>
             </div>
             <div className="flex gap-2">
               <input
@@ -260,7 +260,7 @@ export default function CreateListing() {
               />
               <span>Furnished</span>
             </div>
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <input
                 type="checkbox"
                 id="offer"
@@ -269,7 +269,7 @@ export default function CreateListing() {
                 checked={formData.offer}
               />
               <span>Offer</span>
-            </div>
+            </div> */}
           </div>
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-2">

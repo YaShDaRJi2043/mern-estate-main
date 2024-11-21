@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -13,6 +14,7 @@ import Search from "./pages/Search";
 import Wishlist from "./pages/Wishlist";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Footer from "./components/Footer";
 
 export default function App() {
   return (
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="/wishlist" element={<Wishlist />} />
         </Route>
       </Routes>
+      <Footer />
     </BrowserRouter>
   );
 }
