@@ -9,6 +9,46 @@ export const test = (req, res) => {
   });
 };
 
+//get all user
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const now = new Date();
+
+    // Get start of the current year
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    // Get start of the current month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get start of the current week (assuming week starts on Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    // Fetch counts for the different time ranges
+    const yearCount = await User.countDocuments({
+      createdAt: { $gte: startOfYear },
+    });
+    const monthCount = await User.countDocuments({
+      createdAt: { $gte: startOfMonth },
+    });
+    const weekCount = await User.countDocuments({
+      createdAt: { $gte: startOfWeek },
+    });
+
+    res.status(200).json({
+      status: 200,
+      message: "User registration stats retrieved successfully.",
+      data: {
+        thisYear: yearCount,
+        thisMonth: monthCount,
+        thisWeek: weekCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // update user profile
 export const updateUser = async (req, res, next) => {
   const userId = req.user.id;

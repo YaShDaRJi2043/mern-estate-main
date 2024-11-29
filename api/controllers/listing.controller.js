@@ -66,9 +66,78 @@ export const getListing = async (req, res, next) => {
   }
 };
 
+export const getListingCount = async (req, res, next) => {
+  try {
+    const now = new Date();
+
+    // Get start of the current year
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    // Get start of the current month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get start of the current week (assuming week starts on Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    // Define common filter for approved listings
+    const commonFilter = { status: "Approved" };
+
+    // Fetch counts for sale listings
+    const saleFilter = { ...commonFilter, type: "sale" };
+    const saleYearCount = await Listing.countDocuments({
+      ...saleFilter,
+      createdAt: { $gte: startOfYear },
+    });
+    const saleMonthCount = await Listing.countDocuments({
+      ...saleFilter,
+      createdAt: { $gte: startOfMonth },
+    });
+    const saleWeekCount = await Listing.countDocuments({
+      ...saleFilter,
+      createdAt: { $gte: startOfWeek },
+    });
+
+    // Fetch counts for rent listings
+    const rentFilter = { ...commonFilter, type: "rent" };
+    const rentYearCount = await Listing.countDocuments({
+      ...rentFilter,
+      createdAt: { $gte: startOfYear },
+    });
+    const rentMonthCount = await Listing.countDocuments({
+      ...rentFilter,
+      createdAt: { $gte: startOfMonth },
+    });
+    const rentWeekCount = await Listing.countDocuments({
+      ...rentFilter,
+      createdAt: { $gte: startOfWeek },
+    });
+
+    // Respond with aggregated counts
+    res.status(200).json({
+      status: 200,
+      message: "Listing stats retrieved successfully.",
+      data: {
+        sale: {
+          thisYear: saleYearCount,
+          thisMonth: saleMonthCount,
+          thisWeek: saleWeekCount,
+        },
+        rent: {
+          thisYear: rentYearCount,
+          thisMonth: rentMonthCount,
+          thisWeek: rentWeekCount,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getListings = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit) || 9;
+    const limit = parseInt(req.query.limit);
     const startIndex = parseInt(req.query.startIndex) || 0;
 
     let offer = req.query.offer;
@@ -97,18 +166,28 @@ export const getListings = async (req, res, next) => {
 
     const order = req.query.order || "desc";
 
+    // Dynamically add status filter
+    const status = req.query.status || {
+      $in: ["Approved", "Pending", "Rejected"],
+    };
+
     const listings = await Listing.find({
-      $or: [
-        { name: { $regex: searchTerm, $options: "i" } },
-        { state: { $regex: searchTerm, $options: "i" } },
-        { city: { $regex: searchTerm, $options: "i" } },
+      $and: [
+        { status }, // Dynamic status filter
+        {
+          $or: [
+            { name: { $regex: searchTerm, $options: "i" } },
+            { state: { $regex: searchTerm, $options: "i" } },
+            { city: { $regex: searchTerm, $options: "i" } },
+          ],
+        },
+        { offer },
+        { furnished },
+        { parking },
+        { type },
       ],
-      offer,
-      furnished,
-      parking,
-      type,
     })
-      .sort({ [sort]: order })
+      .sort({ [sort]: order === "desc" ? -1 : 1 })
       .limit(limit)
       .skip(startIndex);
 

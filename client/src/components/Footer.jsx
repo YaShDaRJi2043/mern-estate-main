@@ -82,7 +82,7 @@ const Footer = () => {
               Get the latest property updates and exclusive offers straight to
               your inbox.
             </p>
-            <form className="mt-4 flex space-x-2">
+            <form className="mt-4 md:flex space-x-2">
               <input
                 type="email"
                 placeholder="Your email address"
@@ -90,7 +90,7 @@ const Footer = () => {
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 mt-2 md:mt-0 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Subscribe
               </button>
