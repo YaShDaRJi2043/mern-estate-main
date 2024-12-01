@@ -6,24 +6,24 @@ const ListOFListing = ({ status }) => {
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const response = await fetch(`api/listing/get?status=${status}`);
+  const fetchListings = async () => {
+    try {
+      const response = await fetch(`api/listing/get?status=${status}`);
 
-        if (!response.ok) {
-          throw new Error("Error fetching listings");
-        }
-
-        const data = await response.json();
-        setListings(data);
-      } catch (error) {
-        console.error("Error fetching listings:", error);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error("Error fetching listings");
       }
-    };
 
+      const data = await response.json();
+      setListings(data);
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchListings();
   }, [status]);
 
@@ -37,7 +37,46 @@ const ListOFListing = ({ status }) => {
     setEditMode(false);
   };
 
-  const booleanToYesNo = (value) => (value ? "Yes" : "No");
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setSelectedProduct((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const editListing = async (id, status) => {
+    try {
+      const res = await fetch(`/api/listing/adminUpdateListing?id=${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: status === undefined ? selectedProduct?.status : status,
+          name: selectedProduct.name,
+          description: selectedProduct.description,
+          regularPrice: selectedProduct.regularPrice,
+          type: selectedProduct.type,
+          address: selectedProduct.address,
+          city: selectedProduct.city,
+          state: selectedProduct.state,
+          bedrooms: selectedProduct.bedrooms,
+          bathrooms: selectedProduct.bathrooms,
+          furnished: selectedProduct.furnished,
+          parking: selectedProduct.parking,
+        }),
+      });
+      if (res.status !== 200) {
+        throw new Error("Failed to update listing");
+      }
+      const updatedListing = await res.json();
+      console.log("Listing Approved:", updatedListing);
+      fetchListings();
+    } catch (error) {
+      console.error("Error approving listing:", error);
+    }
+  };
 
   // Skeleton Loader Component
   const SkeletonLoader = () => (
@@ -134,8 +173,10 @@ const ListOFListing = ({ status }) => {
                   {editMode ? (
                     <input
                       type="text"
+                      name="name"
                       className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
-                      defaultValue={selectedProduct.name}
+                      value={selectedProduct.name}
+                      onChange={handleChange}
                     />
                   ) : (
                     <p className="mt-2 text-xl font-medium text-gray-700">
@@ -151,8 +192,10 @@ const ListOFListing = ({ status }) => {
                   </label>
                   {editMode ? (
                     <textarea
+                      name="description"
                       className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
-                      defaultValue={selectedProduct.description}
+                      value={selectedProduct.description}
+                      onChange={handleChange}
                     />
                   ) : (
                     <p className="mt-2 text-lg text-gray-700">
@@ -166,18 +209,41 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     Price:
                   </label>
-                  <p className="mt-2 text-xl font-semibold text-gray-800">
-                    ₹{selectedProduct.regularPrice.toLocaleString("en-IN")}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="regularPrice"
+                      className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
+                      value={selectedProduct.regularPrice}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-xl font-semibold text-gray-800">
+                      ₹{selectedProduct.regularPrice.toLocaleString("en-IN")}
+                    </p>
+                  )}
                 </div>
 
+                {/* Type */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-800">
                     Type:
                   </label>
-                  <p className="mt-2 text-xl font-semibold text-gray-800">
-                    {selectedProduct.type}
-                  </p>
+                  {editMode ? (
+                    <select
+                      name="type"
+                      className="w-full p-2 border rounded-lg mt-2"
+                      value={selectedProduct.type}
+                      onChange={handleChange}
+                    >
+                      <option value="rent">Rent</option>
+                      <option value="sale">Sale</option>
+                    </select>
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.type}
+                    </p>
+                  )}
                 </div>
 
                 {/* Address */}
@@ -185,9 +251,18 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     Address:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {selectedProduct.address}
-                  </p>
+                  {editMode ? (
+                    <textarea
+                      name="address"
+                      className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
+                      value={selectedProduct.address}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.address}
+                    </p>
+                  )}
                 </div>
 
                 {/* City */}
@@ -195,9 +270,19 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     City:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {selectedProduct.city}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="city"
+                      className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
+                      value={selectedProduct.city}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.city}
+                    </p>
+                  )}
                 </div>
 
                 {/* State */}
@@ -205,9 +290,19 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     State:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {selectedProduct.state}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="state"
+                      className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
+                      value={selectedProduct.state}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.state}
+                    </p>
+                  )}
                 </div>
 
                 {/* Bedrooms */}
@@ -215,9 +310,19 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     Bedrooms:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {selectedProduct.bedrooms}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="number"
+                      name="bedrooms"
+                      className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
+                      value={selectedProduct.bedrooms}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.bedrooms}
+                    </p>
+                  )}
                 </div>
 
                 {/* Bathrooms */}
@@ -225,9 +330,19 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     Bathrooms:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {selectedProduct.bathrooms}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="number"
+                      name="bathrooms"
+                      className="w-full p-4 mt-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"
+                      value={selectedProduct.bathrooms}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.bathrooms}
+                    </p>
+                  )}
                 </div>
 
                 {/* Furnished */}
@@ -235,9 +350,19 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     Furnished:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {booleanToYesNo(selectedProduct.furnished)}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="checkbox"
+                      name="furnished"
+                      className="mt-2"
+                      checked={selectedProduct.furnished}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.furnished ? "Yes" : "No"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Parking */}
@@ -245,9 +370,19 @@ const ListOFListing = ({ status }) => {
                   <label className="block text-sm font-semibold text-gray-800">
                     Parking:
                   </label>
-                  <p className="mt-2 text-lg text-gray-700">
-                    {booleanToYesNo(selectedProduct.parking)}
-                  </p>
+                  {editMode ? (
+                    <input
+                      type="checkbox"
+                      name="parking"
+                      className="mt-2"
+                      checked={selectedProduct.parking}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="mt-2 text-lg text-gray-700">
+                      {selectedProduct.parking ? "Yes" : "No"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Images */}
@@ -278,7 +413,13 @@ const ListOFListing = ({ status }) => {
                   >
                     Cancel
                   </button>
-                  <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">
+                  <button
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300"
+                    onClick={() => {
+                      editListing(selectedProduct?._id);
+                      closeModal();
+                    }}
+                  >
                     Save
                   </button>
                 </>
@@ -287,7 +428,10 @@ const ListOFListing = ({ status }) => {
                   {status === "Pending" && (
                     <>
                       <button
-                        onClick={closeModal}
+                        onClick={() => {
+                          editListing(selectedProduct?._id, "Rejected");
+                          closeModal();
+                        }}
                         className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
                       >
                         Reject
@@ -298,14 +442,23 @@ const ListOFListing = ({ status }) => {
                       >
                         Edit
                       </button>
-                      <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">
+                      <button
+                        onClick={() => {
+                          editListing(selectedProduct?._id, "Approved");
+                          closeModal();
+                        }}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300"
+                      >
                         Approve
                       </button>
                     </>
                   )}
                   {status === "Approved" && (
                     <button
-                      onClick={closeModal}
+                      onClick={() => {
+                        editListing(selectedProduct?._id, "Rejected");
+                        closeModal();
+                      }}
                       className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
                     >
                       Reject

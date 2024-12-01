@@ -196,3 +196,21 @@ export const getListings = async (req, res, next) => {
     next(error);
   }
 };
+
+export const adminUpdateListing = async (req, res, next) => {
+  const listing = await Listing.findById(req.query.id);
+  if (!listing) {
+    return next(errorHandler(404, "Listing not found!"));
+  }
+
+  try {
+    const updatedListing = await Listing.findByIdAndUpdate(
+      req.query.id,
+      req.body,
+      { new: true }
+    );
+    res.status(200).json(updatedListing);
+  } catch (error) {
+    next(error);
+  }
+};
